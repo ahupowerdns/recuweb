@@ -1,6 +1,9 @@
 # recuweb
 Recursor built-in website rapid development
 
+![The graph](http://xs.powerdns.com/tmp/powerdns-recursor-live.gif "The graph")
+
+
 To test, build a recursor from Git, and set in your recursor.conf (or on --commandline):
 
 ```
