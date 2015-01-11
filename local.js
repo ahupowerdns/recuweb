@@ -22,7 +22,7 @@ $(document).ready(function() {
 	width: 400,
 	height: 200,
 	renderer: 'line',
-	series: new Rickshaw.Series.FixedDuration([{ name: 'one' }], undefined, {
+	series: new Rickshaw.Series.FixedDuration([{ name: 'servfailps' }, {name: 'qps'}], undefined, {
             timeInterval: 1000,
             maxDataPoints: 100,
             timeBase: new Date().getTime() / 1000
@@ -56,6 +56,102 @@ $(document).ready(function() {
     } );
 
     cpugraph.render();
+    var intervalcount=0;
+
+    function updateRingBuffers()
+    {
+	var filtered=$("#filter1").is(':checked')
+	var qstring='http://'+server+'/jsonstat?api-key='+password+'&command=get-query-ring&name=queries&callback=?';
+	if(filtered)
+	    qstring=qstring+"&public-filtered=1";
+
+	$.getJSON(qstring,
+		  function(data) {
+		      console.log(data);
+		      var bouw="<table><tr><th>Number</th><th>Domain</th><th>Type</th></tr>";
+		      var num=0;
+		      var total=0, rest=0;
+		      $.each(data["entries"], function(a,b) {
+			  total+=b[0];
+			  if(num++ > 10) {
+			      rest+=b[0];
+			      return;
+			  }
+			  if(b[1].length > 25)
+			      b[1]=b[1].substring(0,25);
+
+			  bouw=bouw+("<tr><td>"+b[0]+"</td><td>"+b[1]+"</td><td>"+b[2]+"</td></tr>");
+		      });
+		      bouw+="<tr><td>"+rest+"</td><td>Rest</td></tr>";
+		      bouw=bouw+"</table>";
+		      $("#queryring").html(bouw);
+
+		  });
+
+	filtered=$("#filter2").is(':checked')
+	qstring='http://'+server+'/jsonstat?api-key='+password+'&command=get-query-ring&name=servfail-queries&callback=?';
+	if(filtered)
+	    qstring=qstring+"&public-filtered=1";
+
+	$.getJSON(qstring, 
+		  function(data) {
+		      var bouw="<table><tr><th>Number</th><th>Servfail domain</th><th>Type</th></tr>";
+		      var num=0, total=0, rest=0;
+		      $.each(data["entries"], function(a,b) {
+			  total+=b[0];
+			  if(num++ > 10) {
+			      rest+=b[0];
+			      return;
+			  }
+			  if(b[1].length > 25)
+			      b[1]=b[1].substring(0,25);
+			  bouw=bouw+("<tr><td>"+b[0]+"</td><td>"+b[1]+"</td><td>"+b[2]+"</td></tr>");
+		      });
+		      bouw+="<tr><td>"+rest+"</td><td>Rest</td></tr>";
+		      bouw=bouw+"</table>";
+		      $("#servfailqueryring").html(bouw);
+
+		  });
+
+	$.getJSON('http://'+server+'/jsonstat?api-key='+password+'&command=get-remote-ring&name=remotes&callback=?', 
+		  function(data) {
+		      var bouw="<table><tr><th>Number</th><th>Remote</th></tr>";
+		      var num=0, total=0, rest=0;
+		      $.each(data["entries"], function(a,b) {
+			  total+=b[0];
+			  if(num++ > 10) {
+			      rest +=b[0];
+			      return;
+			  }
+			  bouw=bouw+("<tr><td>"+b[0]+"</td><td>"+b[1]+"</td></tr>");
+		      });
+		      bouw+="<tr><td>"+rest+"</td><td>Rest</td></tr>";
+		      bouw=bouw+"</table>";
+		      $("#remotering").html(bouw);
+
+		  });
+
+	$.getJSON('http://'+server+'/jsonstat?api-key='+password+'&command=get-remote-ring&name=servfail-remotes&callback=?', 
+		  function(data) {
+		      var bouw="<table><tr><th>Number</th><th>Servfail Remote</th></tr>";
+		      var num=0, total=0, rest=0;
+		      $.each(data["entries"], function(a,b) {
+			  total+=b[0];
+			  if(num++ > 10) {
+			      rest += b[0];
+			      return;
+			  }
+			  bouw=bouw+("<tr><td>"+b[0]+"</td><td>"+b[1]+"</td></tr>");
+		      });
+		      bouw+="<tr><td>"+rest+"</td><td>Rest</td></tr>";
+		      bouw=bouw+"</table>";
+		      $("#servfailremotering").html(bouw);
+
+		  });
+	
+
+    }
+
     function update()
     {
 
@@ -77,13 +173,16 @@ $(document).ready(function() {
 		$("#cpu").text(cpu.toFixed(2));
 		var qps=1.0*data["questions"]-1.0*gdata["questions"];
 		$("#qps").text(qps);
+
+		var servfailps=1.0*data["servfail-answers"]-1.0*gdata["servfail-answers"];
+
 		var totpcache=1.0*data["packetcache-hits"]-1.0*gdata["packetcache-hits"]+1.0*data["packetcache-misses"]-1.0*gdata["packetcache-misses"];
 		if(totpcache > 0)
 		    $("#phitrate").text((100.0*(data["packetcache-hits"]-1.0*gdata["packetcache-hits"])/totpcache).toFixed(2));
 		else
 		    $("#phitrate").text(0);
 		
-		qpsgraph.series.addData({ one: qps});
+		qpsgraph.series.addData({ qps: qps, servfailps: servfailps});
 		qpsgraph.render();
 
 		cpugraph.series.addData({ one: cpu});
@@ -101,7 +200,7 @@ $(document).ready(function() {
 		return true;
 	    }
         });
-
+	
 	$.ajax({ url: 'http://'+server+'/servers/localhost?api-key='+password+'&callback=?', type: 'GET', dataType: 'jsonp',
 		 success: function(data) {
 		     $("#version").text("PowerDNS "+data["daemon_type"]+" "+data["version"]);
@@ -109,40 +208,15 @@ $(document).ready(function() {
 	       });
 
 
-	$.getJSON('http://'+server+'/jsonstat?api-key='+password+'&command=get-query-ring&name=queries&callback=?', 
-		  function(data) {
-		      var bouw="<table><tr><th>Number</th><th>Domain</th><th>Type</th></tr>";
-		      var num=0;
-		      $.each(data["entries"], function(a,b) {
-			  if(num++ > 30)
-			      return;
-			  if(b[1].length > 20)
-			      b[1]=b[1].substring(0,20);
-
-			  bouw=bouw+("<tr><td>"+b[0]+"</td><td>"+b[1]+"</td><td>"+b[2]+"</td></tr>");
-		      });
-		      $("#queryring").html(bouw);
-
-		  });
-
-	$.getJSON('http://'+server+'/jsonstat?api-key='+password+'&command=get-query-ring&name=servfail-queries&callback=?', 
-		  function(data) {
-		      var bouw="<table><tr><th>Number</th><th>Servfail domain</th><th>Type</th></tr>";
-		      var num=0;
-		      $.each(data["entries"], function(a,b) {
-			  if(num++ > 20)
-			      return;
-			  if(b[1].length > 20)
-			      b[1]=b[1].substring(0,20);
-			  bouw=bouw+("<tr><td>"+b[0]+"</td><td>"+b[1]+"</td><td>"+b[2]+"</td></tr>");
-		      });
-		      $("#servfailqueryring").html(bouw);
-
-		  });
+	if((intervalcount++)%5)
+	    return;
+	updateRingBuffers();
 
 
     };
 		 
+    $("#filter1").click(updateRingBuffers);
+    $("#filter2").click(updateRingBuffers);
 
     update();
     setInterval(update, 1000);
