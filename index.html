@@ -47,17 +47,15 @@ alt="Fork me on GitHub"></a>
 
 <table width="100%" border="0"><tr><td><img src="https://www.powerdns.com/img/powerdns-logo-220px.png"/></td>
 <td width="75%">
-<form id="serverform" action="javascript:void();">Host: <input id="server" value="127.0.0.1:8082"/>&nbsp; Password: <input id="password" value="no"></form>
+<form id="serverform" action="javascript:void();">Host: <input id="server" value="127.0.0.1:8082"/>&nbsp; Password:
+<input type="password" id="password" value="no"></form>
 </td>
 </tr></table>
 <p>
-Version: <span id="version"></span><br/>
-Uptime: <span id="uptime"></span> <br/>
-Number of queries: <span id="questions"></span> (<span id="qps"></span> qps)<br/>
+Version: <span id="version"></span>, uptime: <span id="uptime"></span>, Number of queries: <span id="questions"></span> (<span id="qps"></span> qps)<br/>
 Over-capacity-drops: <span id="over-capacity-drops"></span>, too old: <span id="too-old"></span><br/>
-Packet cache hitrate: <span id="phitrate"></span>%<br/>
-Average response time: <span id="latency"></span> ms<br/>
-CPU Usage: <span id="cpu"></span>% <br/>
+Packet cache hitrate: <span id="phitrate"></span>%, 
+Average response time: <span id="latency"></span> ms, CPU Usage: <span id="cpu"></span>% <br/>
 </p>
 <table width="100%" cellpadding="20">
   <tr valign="top">
