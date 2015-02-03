@@ -62,6 +62,7 @@ $(document).ready(function() {
     {
 	var filtered=$("#filter1").is(':checked')
 	var qstring='http://'+server+'/jsonstat?api-key='+password+'&command=get-query-ring&name=queries&callback=?';
+
 	if(filtered)
 	    qstring=qstring+"&public-filtered=1";
 
@@ -90,6 +91,7 @@ $(document).ready(function() {
 
 	filtered=$("#filter2").is(':checked')
 	qstring='http://'+server+'/jsonstat?api-key='+password+'&command=get-query-ring&name=servfail-queries&callback=?';
+
 	if(filtered)
 	    qstring=qstring+"&public-filtered=1";
 
@@ -156,10 +158,16 @@ $(document).ready(function() {
     {
 
 	$.ajax({
-            url: 'http://'+server+'/jsonstat?command=stats&api-key='+password+'&callback=?',
+            url: 'http://'+server+'/servers/localhost/statistics?api-key='+password+'&callback=?',
             type: 'GET',
             dataType: 'jsonp',
-            success: function(data, x, y) {
+            success: function(adata, x, y) {
+		console.log(adata);
+
+		var data={};
+		$.each(adata, function(key, val) {
+		    data[val.name]=val.value;
+		});
 		$("#questions").text(data["questions"]);
 		$("#over-capacity-drops").text(data["over-capacity-drops"]);
 		$("#too-old").text(data["too-old-drops"]);
